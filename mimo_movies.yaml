@@ -1,33 +1,107 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: MIMO movies
+  title: MIMO Movies
   description: API para gestionar películas, valoraciones y watchlist de usuarios.
-  version: 1.0.0
+  version: 1.1.0
+  contact:
+    name: MIMO Movies API
+servers:
+  - url: http://localhost:3000
+tags:
+  - name: Sessions
+    description: Inicio de sesión y verificación de identidad.
+  - name: Movies
+    description: Catálogo de películas (lectura + filtros/paginación opcional).
+  - name: Watchlist
+    description: Gestión de la lista de "por ver" del usuario.
+  - name: Health
+    description: Estado del servicio.
+
 paths:
+  /sessions:
+    post:
+      tags: [Sessions]
+      summary: Iniciar sesión de usuario
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Credentials"
+            examples:
+              ok:
+                value: { "username": "mimo", "password": "mimo123" }
+      responses:
+        "200":
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+              examples:
+                ok:
+                  value: { "token": "eyJhbGciOi..." }
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
   /movies:
     get:
+      tags: [Movies]
       summary: Obtiene la lista de películas
       operationId: getMovies
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+          description: Página (opcional, activa paginación si se usa con limit)
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1 }
+          description: Tamaño de página (opcional, usar con page)
+        - in: query
+          name: genre
+          schema: { type: string }
+          description: Filtra por género (opcional)
+        - in: query
+          name: titleLike
+          schema: { type: string }
+          description: Búsqueda por título (contiene) (opcional)
       responses:
         "200":
           description: Lista de películas
+          headers:
+            X-Total-Count:
+              description: Total de elementos (solo si hay paginación)
+              schema: { type: integer }
+            X-Page:
+              description: Página actual (solo si hay paginación)
+              schema: { type: integer }
+            X-Limit:
+              description: Límite por página (solo si hay paginación)
+              schema: { type: integer }
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/Movie"
+              examples:
+                sample:
+                  value:
+                    - { id: 1, title: "The Matrix", genre: "Sci-Fi", duration: 136, rating: 4.7 }
+                    - { id: 2, title: "Inception", genre: "Sci-Fi", duration: 148, rating: 4.6 }
 
   /movies/{movieId}/ratings:
     get:
+      tags: [Movies]
       summary: Obtiene las valoraciones de una película
       operationId: getMovieRatings
       parameters:
         - name: movieId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
           description: ID de la película
       responses:
         "200":
@@ -39,62 +113,65 @@ paths:
                 items:
                   type: object
                   properties:
-                    id:
-                      type: integer
-                    userId:
-                      type: integer
-                    rating:
-                      type: number
-                      format: float
-                    comment:
-                      type: string
+                    id: { type: integer }
+                    userId: { type: integer }
+                    rating: { type: number, format: float }
+                    comment: { type: string }
+              examples:
+                empty:
+                  value: []
+                some:
+                  value:
+                    - { id: 1, userId: 1, rating: 4.5, comment: "Muy buena" }
 
     post:
+      tags: [Movies]
       summary: Crea una valoración para una película
       operationId: createMovieRating
-      security:
-        - bearerAuth: []
+      security: [ { bearerAuth: [] } ]
       parameters:
         - name: movieId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
           description: ID de la película
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/RatingInput"
+            schema: { $ref: "#/components/schemas/RatingInput" }
+            examples:
+              ok:
+                value: { "rating": 4.5, "comment": "Muy buena" }
       responses:
         "201":
           description: Valoración creada
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/Rating"
+              schema: { $ref: "#/components/schemas/Rating" }
+              examples:
+                created:
+                  value: { id: 1, movieId: 1, userId: 1, rating: 4.5, comment: "Muy buena" }
         "422":
-          description: Datos de valoración inválidos
+          $ref: "#/components/responses/ValidationError"
         "401":
-          description: No autorizado
+          $ref: "#/components/responses/UnauthorizedError"
 
   /movies/{movieId}/ratings/{ratingId}:
     get:
+      tags: [Movies]
       summary: Obtiene una valoración específica de una película
       operationId: getMovieRating
       parameters:
         - name: movieId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
           description: ID de la película
         - name: ratingId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
           description: ID de la valoración
       responses:
         "200":
@@ -104,89 +181,86 @@ paths:
               schema:
                 type: object
                 properties:
-                  id:
-                    type: integer
-                  userId:
-                    type: integer
-                  rating:
-                    type: number
-                    format: float
-                  comment:
-                    type: string
+                  id: { type: integer }
+                  userId: { type: integer }
+                  rating: { type: number, format: float }
+                  comment: { type: string }
+              examples:
+                sample:
+                  value: { id: 1, userId: 1, rating: 4.5, comment: "Muy buena" }
 
     patch:
+      tags: [Movies]
       summary: Modifica una valoración de una película
       operationId: updateMovieRating
-      security:
-        - bearerAuth: []
+      security: [ { bearerAuth: [] } ]
       parameters:
         - name: movieId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
           description: ID de la película
         - name: ratingId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
           description: ID de la valoración
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/RatingInput"
+            schema: { $ref: "#/components/schemas/RatingInput" }
+            examples:
+              ok:
+                value: { "rating": 4.9, "comment": "Obra maestra" }
       responses:
         "200":
           description: Valoración modificada
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/Rating"
+              schema: { $ref: "#/components/schemas/Rating" }
+              examples:
+                updated:
+                  value: { id: 1, movieId: 1, userId: 1, rating: 4.9, comment: "Obra maestra" }
         "422":
-          description: Datos de valoración inválidos
+          $ref: "#/components/responses/ValidationError"
         "401":
-          description: No autorizado
+          $ref: "#/components/responses/UnauthorizedError"
 
     delete:
+      tags: [Movies]
       summary: Elimina una valoración de una película
       operationId: deleteMovieRating
-      security:
-        - bearerAuth: []
+      security: [ { bearerAuth: [] } ]
       parameters:
         - name: movieId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
           description: ID de la película
         - name: ratingId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
           description: ID de la valoración
       responses:
         "204":
           description: Valoración eliminada
         "401":
-          description: No autorizado
+          $ref: "#/components/responses/UnauthorizedError"
 
   /watchlist/{userId}:
     get:
+      tags: [Watchlist]
       summary: Obtiene el watchlist de un usuario
       operationId: getUserWatchlist
-      security:
-        - bearerAuth: []
+      security: [ { bearerAuth: [] } ]
       parameters:
         - name: userId
           in: path
           required: true
-          schema:
-            type: integer
-          description: ID del usuario
+          schema: { type: integer }
+          description: ID del usuario (debe coincidir con el del token)
       responses:
         "200":
           description: Lista de películas en el watchlist del usuario
@@ -194,151 +268,119 @@ paths:
             application/json:
               schema:
                 type: array
-                items:
-                  type: object
-                  properties:
-                    movieId:
-                      type: integer
-                    title:
-                      type: string
-                    watched:
-                      type: boolean
+                items: { $ref: "#/components/schemas/WatchlistItem" }
+              examples:
+                empty:
+                  value: []
+                some:
+                  value:
+                    - { movieId: 1, title: "The Matrix", watched: false }
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
   /watchlist/{userId}/items:
     post:
+      tags: [Watchlist]
       summary: Añadir una película al watchlist de un usuario
       operationId: addToWatchlist
-      security:
-        - bearerAuth: []
+      security: [ { bearerAuth: [] } ]
       parameters:
         - name: userId
           in: path
           required: true
-          schema:
-            type: integer
-          description: ID del usuario
+          schema: { type: integer }
+          description: ID del usuario (debe coincidir con el del token)
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/WatchlistItemInput"
+            schema: { $ref: "#/components/schemas/WatchlistItemInput" }
+            examples:
+              ok:
+                value: { "movieId": 1, "watched": false }
       responses:
         "201":
           description: Película añadida al watchlist
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/WatchlistItem"
+              schema: { $ref: "#/components/schemas/WatchlistItem" }
+              examples:
+                created:
+                  value: { movieId: 1, title: "The Matrix", watched: false }
         "422":
-          description: ID de película inválido
+          $ref: "#/components/responses/ValidationError"
         "404":
-          description: Película no encontrada
+          $ref: "#/components/responses/NotFound"
         "409":
-          description: La película ya existe en el watchlist
+          $ref: "#/components/responses/Conflict"
 
   /watchlist/{userId}/items/{itemId}:
     delete:
+      tags: [Watchlist]
       summary: Elimina una película del watchlist de un usuario
       operationId: removeFromWatchlist
-      security:
-        - bearerAuth: []
+      security: [ { bearerAuth: [] } ]
       parameters:
         - name: userId
           in: path
           required: true
-          schema:
-            type: integer
-          description: ID del usuario
+          schema: { type: integer }
+          description: ID del usuario (debe coincidir con el del token)
         - name: itemId
           in: path
           required: true
-          schema:
-            type: integer
-          description: ID del item en el watchlist
+          schema: { type: integer }
+          description: ID del item (== movieId en esta implementación)
       responses:
         "204":
           description: Película eliminada del watchlist
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
-  /sessions:
-    post:
-      summary: Iniciar sesión de usuario
-      operationId: login
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Credentials"
+  /health:
+    get:
+      tags: [Health]
+      summary: Estado del servicio
+      operationId: health
       responses:
         "200":
-          description: Login exitoso
+          description: Estado OK
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/Session"
-        "401":
-          description: Credenciales inválidas
+              schema: { $ref: "#/components/schemas/Health" }
+              examples:
+                ok:
+                  value: { "status": "ok", "uptime": 123.45, "timestamp": "2025-08-09T16:40:53.000Z" }
 
 components:
   schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+      example: { error: "Mensaje de error" }
+
+    Health:
+      type: object
+      properties:
+        status: { type: string, example: "ok" }
+        uptime: { type: number, example: 123.45 }
+        timestamp: { type: string, format: date-time }
+      required: [status, uptime, timestamp]
+
     Movie:
       type: object
       properties:
-        id:
-          type: integer
-        title:
-          type: string
-        genre:
-          type: string
-        duration:
-          type: integer
-        rating:
-          type: number
-          format: float
-
-    WatchlistItemInput:
-      type: object
-      required:
-        - movieId
-      properties:
-        movieId:
-          type: integer
-          minimum: 1
-          description: ID válido de una película existente
-        watched:
-          type: boolean
-          default: false
-          description: Indica si la película ya ha sido vista
-
-    WatchlistItem:
-      type: object
-      properties:
-        movieId:
-          type: integer
-          minimum: 1
-        title:
-          type: string
-        watched:
-          type: boolean
-
-    Credentials:
-      type: object
-      required:
-        - username
-        - password
-      properties:
-        username:
-          type: string
-        password:
-          type: string
-          format: password
-
-    Session:
-      type: object
-      properties:
-        token:
-          type: string
+        id: { type: integer }
+        title: { type: string }
+        genre: { type: string }
+        duration: { type: integer }
+        rating: { type: number, format: float }
+      required: [id, title, genre, duration]
 
     RatingInput:
       type: object
@@ -353,16 +395,14 @@ components:
           type: string
           maxLength: 500
           description: Comentario opcional sobre la película
+      required: [rating]
 
     Rating:
       type: object
       properties:
-        id:
-          type: integer
-        movieId:
-          type: integer
-        userId:
-          type: integer
+        id: { type: integer }
+        movieId: { type: integer }
+        userId: { type: integer }
         rating:
           type: number
           format: float
@@ -371,6 +411,75 @@ components:
         comment:
           type: string
           maxLength: 500
+      required: [id, movieId, userId, rating]
+
+    WatchlistItemInput:
+      type: object
+      required: [movieId]
+      properties:
+        movieId:
+          type: integer
+          minimum: 1
+          description: ID válido de una película existente
+        watched:
+          type: boolean
+          default: false
+          description: Indica si la película ya ha sido vista
+
+    WatchlistItem:
+      type: object
+      properties:
+        movieId: { type: integer, minimum: 1 }
+        title: { type: string }
+        watched: { type: boolean }
+      required: [movieId, title, watched]
+
+    Credentials:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string, format: password }
+
+    Session:
+      type: object
+      properties:
+        token: { type: string }
+      required: [token]
+
+  responses:
+    UnauthorizedError:
+      description: No autorizado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            unauthorized: { value: { error: "No autorizado" } }
+
+    ValidationError:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            bad:
+              value: { error: "rating must be less than or equal to 5" }
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            nf: { value: { error: "Película no encontrada" } }
+
+    Conflict:
+      description: Conflicto con el estado actual del recurso
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            dup: { value: { error: "La película ya existe en el watchlist" } }
 
   securitySchemes:
     bearerAuth:

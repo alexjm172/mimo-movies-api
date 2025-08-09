@@ -1,10 +1,10 @@
 import * as movieRepo from '../repositories/movie.repository';
 
 export type ListMoviesInput = {
-  page?: number;      // opcional (extra)
-  limit?: number;     // opcional (extra)
-  genre?: string;     // opcional (extra)
-  titleLike?: string; // opcional (extra)
+  page?: number;     
+  limit?: number;   
+  genre?: string;     
+  titleLike?: string; 
 };
 
 export async function listMovies(input: ListMoviesInput) {
