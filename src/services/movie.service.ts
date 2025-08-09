@@ -1,4 +1,4 @@
-import * as movieRepo from '../repositories/moview.repository';
+import * as movieRepo from '../repositories/movie.repository';
 
 export type ListMoviesInput = {
   page?: number;      // opcional (extra)

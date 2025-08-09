@@ -10,10 +10,8 @@ export const sequelize = new Sequelize({
 export async function connectDB() {
   try {
     await sequelize.authenticate();
-    // eslint-disable-next-line no-console
     console.log('✅ Conectado a SQLite');
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('❌ Error conectando a la DB', err);
     throw err;
   }

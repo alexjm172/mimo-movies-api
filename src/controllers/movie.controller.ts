@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import * as movieService from '../services/moview.service';
+import * as movieService from '../services/movie.service';
 
 export async function listMovies(req: Request, res: Response, next: NextFunction) {
   try {
@@ -18,7 +18,7 @@ export async function listMovies(req: Request, res: Response, next: NextFunction
       if (result.limit) res.setHeader('X-Limit', String(result.limit));
     }
 
-    // La spec dice que es un array de Movie
+    // La spec array de Movie
     return res.status(200).json(result.rows);
   } catch (err) {
     next(err);
