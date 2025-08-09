@@ -1,0 +1,29 @@
+{
+  "name": "mimo-movies-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/server.js",
+  "license": "ISC",
+  "author": "",
+  "keywords": [],
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec \"ts-node src/server.ts\"",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "test": "echo \"(tests vendrán en siguientes partes)\" && exit 0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.2.1",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
