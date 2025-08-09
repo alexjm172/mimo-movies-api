@@ -32,6 +32,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
 app.get('/openapi.json', (_req, res) => res.status(200).json(openapiDoc));
 app.get('/openapi.yaml', (_req, res) => res.status(200).sendFile(getSpecPath()));
 
+
 // Rutas de la API (las iremos llenando en siguientes partes)
 app.use('/', routes);
 
