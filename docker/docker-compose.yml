@@ -1,0 +1,19 @@
+services:
+  mimo-movies-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: mimo-movies-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      JWT_SECRET: supersecreto
+      DB_STORAGE: /data/mimo.db
+    volumes:
+      - mimo-data:/data
+    restart: unless-stopped
+
+volumes:
+  mimo-data:

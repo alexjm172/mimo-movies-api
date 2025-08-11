@@ -6,6 +6,7 @@ Incluye autenticación **JWT**, validación con **Joi**, documentación **OpenAP
 <p align="center">
   <a href="#requisitos">🧰 Requisitos</a> •
   <a href="#arranque-rápido">⚡ Arranque rápido</a>
+  <a href="#despliegue-con-docker">🐳 Docker</a>
 </p>
 
 ---
@@ -18,7 +19,7 @@ Incluye autenticación **JWT**, validación con **Joi**, documentación **OpenAP
 
 ---
 
-## Arranque rápido
+## Arranque rápido (en local)
 
 ```bash
 # 1) Instalar dependencias
@@ -39,3 +40,24 @@ http://localhost:3000/docs
 # Credenciales demo
 username: mimo
 password: mimo123
+```
+
+## Construir y arrancar en producción
+```bash
+# Construir la imagen
+docker compose -f docker/docker-compose.yml build
+
+# Arrancar el contenedor
+docker compose -f docker/docker-compose.yml up -d
+
+# Comprobar estado
+curl http://localhost:3000/health
+
+# Ver logs en tiempo realç
+docker compose -f docker/docker-compose.yml logs -f
+
+# Parar y limpiar
+docker compose -f docker/docker-compose.yml down -v
+
+```
+
