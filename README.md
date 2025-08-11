@@ -1,63 +1,41 @@
-# MIMO Movies API
+# MIMO Movies API 🎬
 
-API REST para gestionar **películas**, **valoraciones (ratings)** y la **watchlist** de usuarios. Incluye autenticación con **JWT**, documentación **OpenAPI/Swagger**, base de datos **SQLite** con **Sequelize**, validación con **Joi** y batería de tests con **Vitest + Supertest**.
+API REST para gestionar **películas**, **valoraciones** (ratings) y **watchlist** de usuarios.  
+Incluye autenticación **JWT**, validación con **Joi**, documentación **OpenAPI**, **SQLite + Sequelize** y tests **Vitest + Supertest**.
 
----
-
-# Índice
-
-- [Stack](#stack)
-- [Endpoints y docs](#endpoints-y-docs)
-- [Arquitectura & carpetas](#arquitectura--carpetas)
-- [Requisitos](#requisitos)
-- [Configuración de entorno](#configuración-de-entorno)
-- [Instalación](#instalación)
-- [Ejecución](#ejecución)
-- [Seed de datos](#seed-de-datos)
-- [Autenticación](#autenticación)
-- [Contratos de error](#contratos-de-error)
-- [Base de datos](#base-de-datos)
-- [Testing](#testing)
-- [Casos cubiertos por tests](#casos-cubiertos-por-tests)
-- [Notas de implementación](#notas-de-implementación)
-- [Mejoras futuras](#mejoras-futuras)
-- [Licencia](#licencia)
+<p align="center">
+  <a href="#requisitos">🧰 Requisitos</a> •
+  <a href="#arranque-rápido">⚡ Arranque rápido</a>
+</p>
 
 ---
 
-# Stack
+## Requisitos
 
-- **Node.js** + **Express**
-- **TypeScript**
-- **SQLite** + **Sequelize**
-- **Joi** para validaciones
-- **JWT** (jsonwebtoken) para auth
-- **Helmet** + **CORS**
-- **Swagger UI** para documentación
-- **Vitest** + **Supertest** para tests
+- **Node.js 18+**
+- **npm 9+**
+- **SQLite** (incluido vía `sqlite3`)
 
 ---
 
-# Endpoints y docs
+## Arranque rápido
 
-- **Healthcheck:** `GET /health`
-- **Auth (Sessions):** `POST /sessions`
-- **Movies:**  
-  - `GET /movies` (filtros: `page`, `limit`, `genre`, `titleLike`)
-  - `GET /movies/{movieId}/ratings`
-  - `POST /movies/{movieId}/ratings` *(auth)*
-  - `GET /movies/{movieId}/ratings/{ratingId}`
-  - `PATCH /movies/{movieId}/ratings/{ratingId}` *(auth)*
-  - `DELETE /movies/{movieId}/ratings/{ratingId}` *(auth)*
-- **Watchlist** *(todas requieren auth y que el userId del path coincida con el del token)*  
-  - `GET /watchlist/{userId}`
-  - `POST /watchlist/{userId}/items`
-  - `DELETE /watchlist/{userId}/items/{itemId}` *(itemId == movieId)*
+```bash
+# 1) Instalar dependencias
+npm install
 
-**Swagger UI:** `http://localhost:3000/docs`  
-**Spec:** `http://localhost:3000/openapi.json` y `http://localhost:3000/openapi.yaml`  
-> El archivo `openapi.yaml` vive en el repo (y la app lo carga via `config/swagger`).
+# 2) Configurar entorno
+cp .env.example .env   # Edita si es necesario
 
----
+# 3) Arrancar en desarrollo
+npm run dev
 
-# Arquitectura & carpetas
+# 4) Comprobar estado
+curl http://localhost:3000/health
+
+# 5) Documentación Swagger
+http://localhost:3000/docs
+
+# Credenciales demo
+username: mimo
+password: mimo123
