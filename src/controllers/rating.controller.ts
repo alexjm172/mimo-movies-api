@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as ratingService from '../services/rating.service';
+import { Movie } from '../models/Movie';
+import { Rating } from '../models/Rating';
+import { AppError } from '../middlewares/error.middleware';
 
 function parseId(val: string | undefined) {
   const n = Number(val);
@@ -13,7 +16,6 @@ export async function listByMovie(req: Request, res: Response, next: NextFunctio
     if (Number.isNaN(movieId)) return res.status(422).json({ error: 'ID de película inválido' });
 
     const rows = await ratingService.listByMovie(movieId);
-    // La spec para este endpoint lista: id, userId, rating, comment (sin movieId)
     const shaped = rows.map(r => ({ id: r.id, userId: r.userId, rating: r.rating, comment: r.comment ?? '' }));
     return res.status(200).json(shaped);
   } catch (err) { next(err); }
@@ -40,11 +42,22 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     const movieId = parseId(req.params.movieId);
     if (Number.isNaN(movieId)) return res.status(422).json({ error: 'ID de película inválido' });
 
+    const movie = await Movie.findByPk(movieId);
+    if (!movie) throw new AppError(404, 'Película no encontrada');
+
     const user = (req as any).user as { id: number } | undefined;
     if (!user) return res.status(401).json({ error: 'No autorizado' });
 
-    const created = await ratingService.create(movieId, user.id, req.body);
-    // Para POST la spec devuelve Rating completo (incluyendo movieId)
+    const { rating, comment } = req.body as { rating: number; comment?: string };
+
+    const created = await Rating.create({
+      movieId,
+      userId: user.id,
+      rating,
+      comment: comment ?? null,
+    });
+
+    res.setHeader('Location', `/movies/${movieId}/ratings/${created.id}`);
     return res.status(201).json({
       id: created.id,
       movieId: created.movieId,
@@ -68,7 +81,6 @@ export async function update(req: Request, res: Response, next: NextFunction) {
     const updated = await ratingService.update(movieId, ratingId, user.id, req.body);
     if (!updated) return res.status(404).json({ error: 'Valoración no encontrada o no autorizada' });
 
-    // Para PATCH la spec también devuelve Rating completo
     return res.status(200).json({
       id: updated.id,
       movieId: updated.movieId,

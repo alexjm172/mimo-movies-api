@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { ENV } from '../config/env';
+import {ENV} from '../config/env';
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const header = req.header('Authorization');
@@ -11,28 +11,31 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   const token = header.slice('Bearer '.length);
 
   try {
-    const decoded = jwt.verify(token, ENV.JWT_SECRET) as JwtPayload | string;
+    const decoded = jwt.verify(token, ENV.JWT_SECRET) as JwtPayload;
 
-    // verify puede devolver string (si firmaste con "subject" solo) o un objeto (JwtPayload)
-    if (typeof decoded !== 'object' || decoded === null) {
+    // id desde sub o desde payload.id (aceptamos ambos)
+    const sub = decoded.sub;
+    const idFromSub =
+      typeof sub === 'string' ? Number(sub) :
+      typeof sub === 'number' ? sub : NaN;
+
+    const id =
+      Number.isFinite(idFromSub) ? idFromSub :
+      typeof (decoded as any).id === 'number' ? (decoded as any).id :
+      NaN;
+
+    if (!Number.isFinite(id)) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    // sub puede ser string o number
-    const rawSub = decoded.sub;
-    const userId =
-      typeof rawSub === 'string' ? Number(rawSub) :
-      typeof rawSub === 'number' ? rawSub : NaN;
+    const username = (decoded as any).username ?? 'user';
 
-    if (!Number.isFinite(userId)) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
-
-    const username = (decoded as JwtPayload & { username?: string }).username ?? 'user';
-
-    (req as any).user = { id: userId, username };
+    (req as any).user = { id, username, iat: decoded.iat, exp: decoded.exp };
     next();
-  } catch {
+  } catch (err: any) {
+    if (err?.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expirado' });
+    }
     return res.status(401).json({ error: 'No autorizado' });
   }
 }

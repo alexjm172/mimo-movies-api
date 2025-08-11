@@ -1,8 +1,22 @@
+// src/config/seed.ts
+import bcrypt from 'bcryptjs';
+import { sequelize } from './database';
 import { Movie } from '../models/Movie';
 import { User } from '../models/User';
-import bcrypt from 'bcryptjs';
 
-export async function seedIfEmpty() {
+async function baseSeed() {
+  // Usuario de prueba
+  const exists = await User.findOne({ where: { username: 'mimo' } });
+  if (!exists) {
+    const passwordHash = await bcrypt.hash('mimo123', 10);
+    await User.create({
+      username: 'mimo',
+      passwordHash,
+    });
+    console.log('🌱 Usuario de prueba: username=mimo, password=mimo123');
+  }
+
+  // Películas base: asegura que hay al menos estas
   const countMovies = await Movie.count();
   if (countMovies === 0) {
     await Movie.bulkCreate([
@@ -12,11 +26,15 @@ export async function seedIfEmpty() {
     ]);
     console.log('🌱 Seed de películas insertado');
   }
+}
 
-  const demo = await User.findOne({ where: { username: 'mimo' } });
-  if (!demo) {
-    const passwordHash = bcrypt.hashSync('mimo123', 10);
-    await User.create({ username: 'mimo', passwordHash });
-    console.log('🌱 Usuario de prueba: username=mimo, password=mimo123');
-  }
+export async function seedIfEmpty() {
+  await baseSeed();
+}
+
+//Lo que necesitan los tests
+export async function resetDb() {
+  await sequelize.drop();
+  await sequelize.sync();
+  await baseSeed();
 }

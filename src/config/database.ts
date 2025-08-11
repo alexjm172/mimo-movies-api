@@ -1,18 +1,28 @@
 import { Sequelize } from 'sequelize';
-import { ENV } from './env';
+import {ENV} from './env';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+const isTest = ENV.NODE_ENV === 'test';
+const DB_FILE = ENV.DB_FILE ?? (isTest ? ':memory:' : 'mimo_movies.db');
 
 export const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: process.env.DB_FILE || 'mimo_movies.db',
-  logging: ENV.NODE_ENV === 'development' ? false : false // desactivado
+  storage: DB_FILE,
+  logging: false, 
 });
 
-export async function connectDB() {
-  try {
-    await sequelize.authenticate();
-    console.log('✅ Conectado a SQLite');
-  } catch (err) {
-    console.error('❌ Error conectando a la DB', err);
-    throw err;
+export async function ensureDbReady() {
+  if (DB_FILE !== ':memory:') {
+    await fs.mkdir(path.dirname(DB_FILE), { recursive: true }).catch(() => {});
   }
+  await sequelize.authenticate();
+  await sequelize.query('PRAGMA foreign_keys = ON');
+}
+
+// si usabas connectDB en algún lado, mantenemos alias
+export async function connectDB() {
+  await ensureDbReady();
+  // eslint-disable-next-line no-console
+  console.log('✅ Conectado a SQLite');
 }

@@ -7,7 +7,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     if (!username || !password) return res.status(422).json({ error: 'username y password son obligatorios' });
 
     const session = await authService.login(username, password);
-    res.status(200).json(session); // { token }
+    res.status(200).json(session);
   } catch (err) {
     next(err);
   }

@@ -1,24 +1,41 @@
-import * as wlRepo from '../repositories/watchlist.repository';
+// src/services/watchlist.service.ts
 import { Movie } from '../models/Movie';
+import { WatchlistItem } from '../models/WatchlistItem';
+import { AppError } from '../middlewares/error.middleware';
 
-export async function getUserWatchlist(userId: number) {
-  return wlRepo.listByUser(userId);
+export async function getWatchlist(userId: number) {
+  const rows = await WatchlistItem.findAll({
+    where: { userId },
+    order: [['movieId', 'ASC']],
+  });
+
+  if (rows.length === 0) return [];
+
+  const movieIds = [...new Set(rows.map(r => r.movieId))];
+  const movies = await Movie.findAll({
+    where: { id: movieIds as any }, // si usas Sequelize.Op.in, perfecto
+    attributes: ['id', 'title'],
+  });
+
+  const titleById = new Map(movies.map(m => [m.id, m.title]));
+  return rows.map(r => ({
+    movieId: r.movieId,
+    title: titleById.get(r.movieId) ?? '',
+    watched: r.watched,
+  }));
 }
 
-export async function addToWatchlist(userId: number, movieId: number, watched: boolean) {
-  if (!Number.isFinite(movieId) || movieId < 1) {
-    const e: any = new Error('ID de película inválido'); e.status = 422; throw e;
-  }
+export async function add(userId: number, movieId: number) {
   const movie = await Movie.findByPk(movieId);
-  if (!movie) { const e: any = new Error('Película no encontrada'); e.status = 404; throw e; }
+  if (!movie) throw new AppError(404, 'Película no encontrada', 'MOVIE_NOT_FOUND');
 
-  const exists = await wlRepo.find(userId, movieId);
-  if (exists) { const e: any = new Error('La película ya existe en el watchlist'); e.status = 409; throw e; }
+  const existing = await WatchlistItem.findOne({ where: { userId, movieId } });
+  if (existing) throw new AppError(409, 'La película ya existe en el watchlist', 'WL_DUP');
 
-  const created = await wlRepo.create(userId, movieId, watched);
+  const created = await WatchlistItem.create({ userId, movieId, watched: false });
   return { movieId: created.movieId, title: movie.title, watched: created.watched };
 }
 
-export async function removeFromWatchlist(userId: number, itemIdAsMovieId: number) {
-  await wlRepo.removeByMovie(userId, itemIdAsMovieId); // idempotente → 204 siempre
+export async function removeByMovie(userId: number, movieId: number) {
+  await WatchlistItem.destroy({ where: { userId, movieId } }); // idempotente
 }

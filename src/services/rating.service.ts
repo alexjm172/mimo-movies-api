@@ -23,7 +23,6 @@ export async function getOne(movieId: number, ratingId: number) {
 
 export async function create(movieId: number, userId: number, data: { rating: number; comment?: string }) {
   // verifica que exista la película
-  // (más eficiente: un findById; si no tienes, puedes intentar crear y capturar FK; aquí asumimos check)
   const created = await ratingRepo.create(movieId, userId, data);
   await recalcMovieAverage(movieId);
   return created;

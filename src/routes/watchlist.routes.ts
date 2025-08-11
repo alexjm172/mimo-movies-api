@@ -1,11 +1,20 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middlewares/auth.middleware';
-import { validateBody } from '../middlewares/validate.middleware';
-import { WatchlistItemInputSchema } from '../validators/watchlist.schema';
-import * as ctrl from '../controllers/watchlist.controller';
+import { validate } from '../middlewares/validate.middleware';
+import * as wl from '../controllers/watchlist.controller';
+import {
+  watchlistParamsUserSchema,
+  watchlistParamsItemSchema,
+  watchlistBodyAddSchema,
+} from '../validators/watchlist.schema';
 
 const router = Router();
-router.get('/:userId', authMiddleware, ctrl.getUserWatchlist);
-router.post('/:userId/items', authMiddleware, validateBody(WatchlistItemInputSchema), ctrl.addToWatchlist);
-router.delete('/:userId/items/:itemId', authMiddleware, ctrl.removeFromWatchlist);
+
+router.use(authMiddleware);
+
+import { getWatchlist, addToWatchlist, removeFromWatchlist } from '../controllers/watchlist.controller';
+router.get('/:userId', validate({ params: watchlistParamsUserSchema }), getWatchlist);
+router.post('/:userId/items', validate({ params: watchlistParamsUserSchema, body: watchlistBodyAddSchema }), addToWatchlist);
+router.delete('/:userId/items/:itemId', validate({ params: watchlistParamsItemSchema }), removeFromWatchlist);
+
 export default router;
