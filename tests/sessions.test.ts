@@ -1,4 +1,3 @@
-// tests/sessions.test.ts
 import { beforeAll, describe, it, expect } from 'vitest';
 import { api, reset } from './helpers';
 

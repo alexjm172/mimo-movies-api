@@ -1,4 +1,3 @@
-// src/services/watchlist.service.ts
 import { Movie } from '../models/Movie';
 import { WatchlistItem } from '../models/WatchlistItem';
 import { AppError } from '../middlewares/error.middleware';

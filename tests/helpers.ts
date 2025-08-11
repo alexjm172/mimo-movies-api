@@ -1,6 +1,6 @@
 // tests/helpers.ts
 import request from 'supertest';
-import app from '../src/app';
+import {app }from '../src/app';
 import { resetDb } from '../src/config/seed';
 
 export const api = request(app);
