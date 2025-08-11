@@ -4,9 +4,9 @@ API REST para gestionar **películas**, **valoraciones** (ratings) y **watchlist
 Incluye autenticación **JWT**, validación con **Joi**, documentación **OpenAPI**, **SQLite + Sequelize** y tests **Vitest + Supertest**.
 
 <p align="center">
-  <a href="#requisitos">🧰 Requisitos</a> •
-  <a href="#arranque-rápido">⚡ Arranque rápido</a>
-  <a href="#despliegue-con-docker">🐳 Docker</a>
+  • <a href="#requisitos">🧰 Requisitos</a> 
+  • <a href="#arranque-rápido">⚡ Arranque rápido</a>
+  • <a href="#despliegue-con-docker">🐳 Docker</a>
 </p>
 
 ---
@@ -19,7 +19,7 @@ Incluye autenticación **JWT**, validación con **Joi**, documentación **OpenAP
 
 ---
 
-## Arranque rápido (en local)
+## Arranque rápido
 
 ```bash
 # 1) Instalar dependencias
@@ -42,7 +42,7 @@ username: mimo
 password: mimo123
 ```
 
-## Construir y arrancar en producción
+## Despliegue con Docker
 ```bash
 # Construir la imagen
 docker compose -f docker/docker-compose.yml build
